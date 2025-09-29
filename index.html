@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Routine Tracker — Day by Day</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg-1:#05060a;
+      --bg-2:#0b1020;
+      --neon-a:#7c3aed;
+      --neon-b:#06b6d4;
+      --muted:#9aa3bf;
+      --text:#e6eef8;
+      --success:#14f195;
+      --danger:#ff6b6b;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+      background:linear-gradient(180deg,var(--bg-1),var(--bg-2));
+      color:var(--text);
+      padding:22px;
+      display:flex;
+      justify-content:center;
+    }
+    .wrap{max-width:1200px;width:100%}
+
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:64px;height:64px;border-radius:14px;background:linear-gradient(135deg,var(--neon-a),#8b5cf6);
+      display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:18px}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    .controls{display:flex;gap:10px;align-items:center}
+    .control-btn{
+      width:42px;height:42px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);
+      background:rgba(255,255,255,0.04);backdrop-filter:blur(10px);
+      color:var(--text);cursor:pointer;font-weight:700;font-size:14px;
+    }
+    input[type="date"]{
+      border-radius:10px;padding:8px 12px;background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(8px);
+      color:var(--text);font-weight:600;min-width:160px;
+    }
+
+    .grid{display:grid;grid-template-columns:1fr 380px;gap:18px}
+    .card{
+      background:rgba(255,255,255,0.02);
+      backdrop-filter:blur(12px);
+      padding:16px;border-radius:var(--radius);
+      border:1px solid rgba(255,255,255,0.06);
+      box-shadow:0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .day-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;cursor:pointer}
+    .day-header h2{margin:0;font-size:20px}
+    .percent{font-size:28px;font-weight:700;background:linear-gradient(90deg,var(--neon-b),var(--neon-a));
+      -webkit-background-clip:text;color:transparent}
+    .arrow{font-size:16px;color:var(--muted);margin-left:8px}
+
+    .tasks{display:grid;gap:10px}
+    .task{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:12px;
+      border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);backdrop-filter:blur(6px)}
+    .task .time{font-weight:700}
+    .mark-btn{padding:6px 10px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.15);
+      cursor:pointer;color:var(--text);font-weight:600}
+    .done{background:rgba(20,241,149,0.06);border-left:4px solid var(--success)}
+    .notdone{background:rgba(255,107,107,0.06);border-left:4px solid var(--danger)}
+
+    .tabs {display:flex;gap:10px;margin-bottom:12px}
+    .tab-btn{padding:6px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);
+      background:transparent;color:var(--text);cursor:pointer;font-weight:600;font-size:14px}
+    .tab-btn.active{background:linear-gradient(135deg,var(--neon-a),var(--neon-b));color:white}
+
+    .summary .big{font-size:36px;font-weight:900;margin:6px 0}
+    .stat-row{display:flex;justify-content:space-between;padding:8px 0;color:var(--muted);border-top:1px dashed rgba(255,255,255,0.06)}
+    .chart-wrap{height:220px;margin-top:8px}
+    .actions{margin-top:12px;display:flex;gap:10px}
+    .btn{padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);cursor:pointer;background:transparent;color:var(--text);font-weight:700}
+    .btn.primary{border-color:var(--neon-a)}
+    .btn.danger{border-color:var(--danger);color:var(--danger)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">RT</div>
+        <div>
+          <h1>Routine Tracker</h1>
+          <p class="lead">Dark Neon • Day by Day</p>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="prevDay" class="control-btn">◀</button>
+        <input type="date" id="daySelect" />
+        <button id="nextDay" class="control-btn">▶</button>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="card">
+        <div class="day-header" id="dayHeader">
+          <h2 id="dayTitle">Today</h2>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="dayPercent" class="percent">0%</div>
+            <span id="toggleArrow" class="arrow">▼</span>
+          </div>
+        </div>
+        <div id="tasksList" class="tasks"></div>
+      </section>
+
+      <aside class="card summary">
+        <div class="tabs">
+          <button class="tab-btn active" data-view="daily">Daily</button>
+          <button class="tab-btn" data-view="weekly">Weekly</button>
+          <button class="tab-btn" data-view="monthly">Monthly</button>
+          <button class="tab-btn" data-view="yearly">Yearly</button>
+        </div>
+        <div>
+          <div style="color:var(--muted);font-size:13px" id="overviewLabel">Daily Overview</div>
+          <div id="bigPercent" class="big">0%</div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="dayChart"></canvas>
+        </div>
+        <div class="stat-row"><div>Total Done</div><div id="totalDone">0</div></div>
+        <div class="stat-row"><div>Total Not Done</div><div id="totalNot">0</div></div>
+        <div class="actions">
+          <button id="resetDayBtn" class="btn primary">Reset Day</button>
+          <button id="resetAllBtn" class="btn danger">Reset All</button>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+  // --- routines A–D ---
+  const routineA = [
+    ["05:30 – 06:30 AM", "Wake up + exercise"],
+    ["06:30 – 07:15 AM", "Freelancing / practice"],
+    ["07:15 – 07:30 AM", "Breakfast"],
+    ["07:30 – 09:30 AM", "Freelancing (client work)"],
+    ["09:30 – 09:55 AM", "Trading prep"],
+    ["10:00 – 10:30 AM", "Binary trading (2nd session)"],
+    ["10:30 – 11:00 AM", "Get ready for college"],
+    ["11:00 – 11:15 AM", "Binary trading (1st session)"],
+    ["11:15 – 01:20 PM", "College lectures"],
+    ["01:20 – 02:10 PM", "Lunch + short freelance task"],
+    ["02:10 – 05:30 PM", "College lectures"],
+    ["05:30 – 07:15 PM", "FREE TIME (Relax / hangout / social media)"],
+    ["07:15 – 07:45 PM", "Dinner"],
+    ["08:00 – 09:30 PM", "Freelancing (main projects)"],
+    ["09:30 – 10:00 PM", "Trading analysis"],
+    ["10:00 – 11:00 PM", "Study (B.Tech subjects)"],
+    ["11:00 – 12:00 AM", "FREE TIME (gaming, Netflix, chill, family)"],
+    ["12:00 – 05:30 AM", "Sleep"],
+  ];
+
+  const routineB = [
+    ["05:30 – 06:30 AM", "Wake up + exercise"],
+    ["06:30 – 07:15 AM", "Freelancing / practice"],
+    ["07:15 – 07:30 AM", "Breakfast"],
+    ["07:30 – 09:30 AM", "Freelancing / learning"],
+    ["09:30 – 09:55 AM", "Trading prep"],
+    ["10:00 – 10:30 AM", "Binary trading (2nd session)"],
+    ["10:30 – 11:00 AM", "Get ready for college"],
+    ["11:00 – 11:15 AM", "Binary trading (1st session)"],
+    ["11:15 – 12:30 PM", "College lecture"],
+    ["12:30 – 02:10 PM", "Lunch + FREE TIME (1 hr+ freelancing optional)"],
+    ["02:10 – 05:30 PM", "College lectures"],
+    ["05:30 – 07:15 PM", "FREE TIME (outdoor walk / relax / hobby)"],
+    ["07:15 – 07:45 PM", "Dinner"],
+    ["08:00 – 09:30 PM", "Freelancing (main work)"],
+    ["09:30 – 10:00 PM", "Trading analysis"],
+    ["10:00 – 11:00 PM", "Study (assignments/coding)"],
+    ["11:00 – 12:00 AM", "FREE TIME"],
+    ["12:00 – 05:30 AM", "Sleep"],
+  ];
+
+  const routineC = [
+    ["05:30 – 06:30 AM", "Wake up + exercise"],
+    ["06:30 – 07:15 AM", "Freelancing (practice/design)"],
+    ["07:15 – 07:30 AM", "Breakfast"],
+    ["07:30 – 10:00 AM", "Freelancing (portfolio/clients)"],
+    ["10:00 – 10:30 AM", "Binary trading (2nd session)"],
+    ["11:00 – 11:15 AM", "Binary trading (1st session)"],
+    ["11:15 – 01:00 PM", "Freelancing (client projects)"],
+    ["01:00 – 02:00 PM", "Lunch + relax"],
+    ["02:00 – 04:00 PM", "Study (B.Tech / coding)"],
+    ["04:00 – 06:00 PM", "FREE TIME (2 hrs – outdoor, gaming, social)"],
+    ["06:00 – 07:15 PM", "Freelancing (contests/portfolio)"],
+    ["07:15 – 07:45 PM", "Dinner"],
+    ["08:00 – 10:00 PM", "Freelancing (client work)"],
+    ["10:00 – 11:00 PM", "Study / coding"],
+    ["11:00 – 12:00 AM", "FREE TIME"],
+    ["12:00 – 05:30 AM", "Sleep"],
+  ];
+
+  const routineD = [
+    ["05:30 – 06:30 AM", "Wake up + exercise"],
+    ["06:30 – 07:15 AM", "Freelancing (learning new tools)"],
+    ["07:15 – 07:30 AM", "Breakfast"],
+    ["07:30 – 11:00 AM", "Freelancing (portfolio updates, Behance/Fiverr)"],
+    ["11:00 – 12:00 PM", "Trading weekly analysis"],
+    ["12:00 – 01:00 PM", "Lunch"],
+    ["01:00 – 03:00 PM", "Freelancing / design contests"],
+    ["03:00 – 05:00 PM", "FREE TIME (movies, chill, outing)"],
+    ["05:00 – 07:15 PM", "Study (backlog / coding)"],
+    ["07:15 – 07:45 PM", "Dinner"],
+    ["08:00 – 10:00 PM", "Freelancing (projects)"],
+    ["10:00 – 11:00 PM", "Study"],
+    ["11:00 – 12:00 AM", "FREE TIME"],
+    ["12:00 – 05:30 AM", "Sleep"],
+  ];
+
+  const WEEK_MAP = [
+    { name: "Monday", routine: routineA },
+    { name: "Tuesday", routine: routineA },
+    { name: "Wednesday", routine: routineB },
+    { name: "Thursday", routine: routineA },
+    { name: "Friday", routine: routineB },
+    { name: "Saturday", routine: routineC },
+    { name: "Sunday", routine: routineD },
+  ];
+
+  // ----- main script -----
+  const STORAGE_KEY="routine_tracker_daybyday_full";
+  let appData={}; try{appData=JSON.parse(localStorage.getItem(STORAGE_KEY))||{}}catch{appData={}};
+  function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(appData));}
+
+  const daySelect=document.getElementById("daySelect");
+  const dayTitle=document.getElementById("dayTitle");
+  const dayPercent=document.getElementById("dayPercent");
+  const tasksList=document.getElementById("tasksList");
+  const prevDayBtn=document.getElementById("prevDay");
+  const nextDayBtn=document.getElementById("nextDay");
+  const bigPercent=document.getElementById("bigPercent");
+  const totalDone=document.getElementById("totalDone");
+  const totalNot=document.getElementById("totalNot");
+  const resetDayBtn=document.getElementById("resetDayBtn");
+  const resetAllBtn=document.getElementById("resetAllBtn");
+  const chartCtx=document.getElementById("dayChart").getContext("2d");
+  const dayHeader=document.getElementById("dayHeader");
+  const toggleArrow=document.getElementById("toggleArrow");
+  const tabs=document.querySelectorAll(".tab-btn");
+  const overviewLabel=document.getElementById("overviewLabel");
+
+  let dayChart=null;
+  let currentDate=new Date();
+  let tasksVisible=true;
+  let currentView="daily";
+
+  tabs.forEach(tab=>{
+    tab.onclick=()=>{
+      tabs.forEach(t=>t.classList.remove("active"));
+      tab.classList.add("active");
+      currentView=tab.dataset.view;
+      overviewLabel.textContent=tab.textContent+" Overview";
+      render();
+    }
+  });
+
+  function formatKey(d){return d.toISOString().split("T")[0];}
+  function formatNice(d){return d.toLocaleDateString("en-US",{weekday:"long",day:"numeric",month:"short"});}
+  function computeProgress(arr){if(!arr)return 0;const t=arr.length,d=arr.filter(x=>x==="Done").length;return t?d/t:0;}
+
+  function render(){
+    const key=formatKey(currentDate);
+    const weekday=currentDate.getDay();
+    const routine=WEEK_MAP[weekday===0?6:weekday-1].routine;
+    if(!appData[key]) appData[key]=new Array(routine.length).fill(null);
+
+    dayTitle.textContent=formatNice(currentDate);
+    const prog=computeProgress(appData[key]);
+    dayPercent.textContent=Math.round(prog*100)+"%";
+
+    tasksList.innerHTML="";
+    routine.forEach((slot,i)=>{
+      const status=appData[key][i];
+      const div=document.createElement("div");
+      div.className="task "+(status==="Done"?"done":status==="Not Done"?"notdone":"");
+      div.innerHTML=`<div><div class="time">${slot[0]}</div><small>${slot[1]}</small></div>`;
+      const btn=document.createElement("button");
+      btn.className="mark-btn";
+      btn.textContent=status==="Done"?"Done ✓":status==="Not Done"?"Not Done ✕":"Mark";
+      btn.onclick=()=>{
+        const cur=appData[key][i];
+        const next=cur===null?"Done":(cur==="Done"?"Not Done":null);
+        appData[key][i]=next; save(); render();
+      };
+      div.appendChild(btn); tasksList.appendChild(div);
+    });
+
+    tasksList.style.display=tasksVisible?"grid":"none";
+    toggleArrow.textContent=tasksVisible?"▲":"▼";
+    daySelect.value=key;
+
+    // build overview data
+    let lastData=[],done=0,not=0;
+
+    if(currentView==="daily"){
+      routine.forEach((slot,i)=>{
+        let status = appData[key][i];
+        let progress = status === "Done" ? 100 : (status === "Not Done" ? 0 : 0);
+        lastData.push({label: slot[0], progress: progress/100});
+        if(status==="Done") done++;
+        else if(status==="Not Done") not++;
+      });
+    } else if(currentView==="weekly"){
+      for(let i=6;i>=0;i--){
+        const d=new Date(currentDate);d.setDate(d.getDate()-i);
+        const k=formatKey(d);
+        const r=WEEK_MAP[(d.getDay()===0?6:d.getDay()-1)].routine;
+        if(!appData[k]) appData[k]=new Array(r.length).fill(null);
+        let dayDone=appData[k].filter(s=>s==="Done").length;
+        let dayNot=appData[k].filter(s=>s==="Not Done").length;
+        lastData.push({label:d.toLocaleDateString("en-US",{weekday:"short"}),progress:dayDone});
+        done+=dayDone; not+=dayNot;
+      }
+    } else if(currentView==="monthly"){
+      for(let i=29;i>=0;i--){
+        const d=new Date(currentDate);d.setDate(d.getDate()-i);
+        const k=formatKey(d);
+        const r=WEEK_MAP[(d.getDay()===0?6:d.getDay()-1)].routine;
+        if(!appData[k]) appData[k]=new Array(r.length).fill(null);
+        let dateDone=appData[k].filter(s=>s==="Done").length;
+        let dateNot=appData[k].filter(s=>s==="Not Done").length;
+        lastData.push({label:d.getDate(),progress:dateDone});
+        done+=dateDone; not+=dateNot;
+      }
+    } else if(currentView==="yearly"){
+      for(let m=0;m<12;m++){
+        const d=new Date(currentDate.getFullYear(),m,1);
+        let monthDone=0,monthNot=0;
+        for(let dd=1;dd<=31;dd++){
+          const day=new Date(currentDate.getFullYear(),m,dd);
+          if(day.getMonth()!==m) break;
+          const k=formatKey(day);
+          const r=WEEK_MAP[(day.getDay()===0?6:day.getDay()-1)].routine;
+          if(!appData[k]) appData[k]=new Array(r.length).fill(null);
+          monthDone+=appData[k].filter(s=>s==="Done").length;
+          monthNot+=appData[k].filter(s=>s==="Not Done").length;
+        }
+        lastData.push({label:d.toLocaleDateString("en-US",{month:"short"}),progress:monthDone});
+        done+=monthDone; not+=monthNot;
+      }
+    }
+
+    bigPercent.textContent = (done+not>0?Math.round(done/(done+not)*100):0)+"%";
+    totalDone.textContent = done;
+    totalNot.textContent = not;
+
+    if(dayChart){
+      dayChart.data.labels = lastData.map(x=>x.label);
+      dayChart.data.datasets[0].data = lastData.map(x=>x.progress);
+      dayChart.update();
+    }else{
+      dayChart = new Chart(chartCtx,{
+        type:"line",
+        data:{
+          labels:lastData.map(x=>x.label),
+          datasets:[{
+            label:"Tasks Done",
+            data:lastData.map(x=>x.progress),
+            borderColor:"#7c3aed",
+            tension:0.3,
+            pointBackgroundColor:"#7c3aed"
+          }]
+        },
+        options:{
+          plugins:{legend:{display:false}},
+          scales:{y:{beginAtZero:true}}
+        }
+      });
+    }
+  }
+
+  dayHeader.onclick=()=>{tasksVisible=!tasksVisible;render();}
+  daySelect.onchange=e=>{const d=new Date(e.target.value);if(!isNaN(d)){currentDate=d;render();}}
+  prevDayBtn.onclick=()=>{currentDate.setDate(currentDate.getDate()-1);render();}
+  nextDayBtn.onclick=()=>{currentDate.setDate(currentDate.getDate()+1);render();}
+  resetDayBtn.onclick=()=>{if(confirm("Reset this day?")){appData[formatKey(currentDate)]=null;save();render();}}
+  resetAllBtn.onclick=()=>{if(confirm("Reset ALL data?")){appData={};save();render();}}
+
+  render();
+  </script>
+</body>
+</html>
